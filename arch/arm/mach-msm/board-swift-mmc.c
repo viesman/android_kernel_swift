@@ -1,4 +1,4 @@
-/* arch/arm/mach-msm/lge/board-thunderg-mmc.c
+/* arch/arm/mach-msm/lge/board-swift-mmc.c
  * Copyright (C) 2010 LGE Corporation.
  * Author: SungEun Kim <cleaneye.kim@lge.com>
  *
@@ -26,7 +26,6 @@
 #include <mach/vreg.h>
 #include <mach/mpp.h>
 #include <mach/board.h>
-/*#include "board-thunderg.h" */
 
 /* sdcard related macros */
 #ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION
@@ -48,18 +47,21 @@ static void sdcc_gpio_init(void)
 	int rc = 0;
 	if (gpio_request(GPIO_SD_DETECT_N, "sdc1_status_pin_irq"))
 		pr_err("failed to request gpio sdc1_status_irq\n");
-	rc = gpio_tlmm_config(GPIO_CFG(GPIO_SD_DETECT_N, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP,
-									GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+#if 0
+	rc = gpio_tlmm_config(GPIO_CFG(GPIO_SD_DETECT_N, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+#endif
+	rc = gpio_tlmm_config(GPIO_CFG(GPIO_MMC_COVER_DETECT, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP,
+				GPIO_2MA), GPIO_ENABLE);
 	if (rc)
-		printk(KERN_ERR "%s: Failed to configure GPIO %d\n",
-					__func__, rc);
+		printk(KERN_ERR "%s: Failed to configure GPIO %d\n", __func__, rc);
+
 	if (gpio_request(GPIO_MMC_COVER_DETECT, "sdc1_status_socket_irq"))
 		pr_err("failed to request gpio sdc1_status_irq\n");
-	rc = gpio_tlmm_config(GPIO_CFG(GPIO_MMC_COVER_DETECT, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP,
-								   GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+
+	rc = gpio_tlmm_config(GPIO_CFG(GPIO_MMC_COVER_DETECT, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+
 	if (rc)
-		printk(KERN_ERR "%s: Failed to configure GPIO %d\n",
-					__func__, rc);
+		printk(KERN_ERR "%s: Failed to configure GPIO %d\n", __func__, rc);
 #endif
 	/* SDC1 GPIOs */
 #ifdef CONFIG_MMC_MSM_SDC1_SUPPORT
@@ -220,6 +222,8 @@ static uint32_t msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 {
 	int rc = 0;
 	struct platform_device *pdev;
+	int i;
+	unsigned cnt = 0;
 
 	pdev = container_of(dv, struct platform_device, dev);
 	msm_sdcc_setup_gpio(pdev->id, !!vdd);
@@ -236,8 +240,15 @@ static uint32_t msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 				rc = mpp_config_digital_out(mpp_mmc,
 				     MPP_CFG(MPP_DLOGIC_LVL_MSMP,
 				     MPP_DLOGIC_OUT_CTRL_LOW));
-			} else
-				rc = vreg_disable(vreg_mmc);
+			} else {
+//				rc = vreg_set_level(vreg_mmc, 0);
+//				cnt = vreg_get_refcnt(vreg_mmc);
+//				for(i = 0; i < cnt; i++)
+					rc = vreg_disable(vreg_mmc);
+//				printk(KERN_DEBUG "%s: Refcnt %d\n", 
+//						__func__, vreg_get_refcnt(vreg_mmc));
+			}
+
 			if (rc)
 				printk(KERN_ERR "%s: return val: %d \n",
 					__func__, rc);
@@ -254,7 +265,7 @@ static uint32_t msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 #ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION
 			rc = vreg_set_level(vreg_mmc, VREG_SD_LEVEL);
 #else		
-			rc = vreg_set_level(vreg_mmc, 2850);
+			rc = vreg_set_level(vreg_mmc, 2650);
 #endif
 			if (!rc)
 				rc = vreg_enable(vreg_mmc);
@@ -275,6 +286,10 @@ static unsigned int thunderg_sdcc_slot_status(struct device *dev)
 }
 #endif
 
+static struct mmc_platform_data msm7x27_sdcc_data = {
+	.ocr_mask	= MMC_VDD_28_29,
+	.translate_vdd	= msm_sdcc_setup_power,
+};
 
 /* LGE_CHANGE_S [jisung.yang@lge.com] 2010-04-24, BCM4325 control gpio */
 #if defined(CONFIG_LGE_BCM432X_PATCH)
@@ -299,9 +314,14 @@ static struct mmc_platform_data bcm432x_sdcc_wlan_data = {
 #endif  /* CONFIG_LGE_BCM432X_PATCH*/
 /* LGE_CHANGE_E [jisung.yang@lge.com] 2010-04-24, BCM4325 control gpio */
 
+#define SWIFT_MMC_VDD (MMC_VDD_165_195 | MMC_VDD_20_21 | MMC_VDD_21_22 \
+			| MMC_VDD_22_23 | MMC_VDD_23_24 | MMC_VDD_24_25 \
+			| MMC_VDD_25_26 | MMC_VDD_26_27 | MMC_VDD_27_28 \
+			| MMC_VDD_28_29 | MMC_VDD_29_30)
+
 static struct mmc_platform_data msm7x2x_sdc1_data = {
 #ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION
-	.ocr_mask		= MMC_VDD_30_31,
+	.ocr_mask	= SWIFT_MMC_VDD, //MMC_VDD_30_31,
 	.translate_vdd	= msm_sdcc_setup_power,
 	.status 		= thunderg_sdcc_slot_status,
 	.status_irq 	= MSM_GPIO_TO_INT(GPIO_MMC_COVER_DETECT),

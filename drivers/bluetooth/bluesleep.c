@@ -638,7 +638,7 @@ static int __init bluesleep_probe(struct platform_device *pdev)
 		goto free_bt_ext_wake;
 	}
 
-	bsi->uport= msm_hs_get_bt_uport(bs_platform_data->bluetooth_port_num);
+//	bsi->uport= msm_hs_get_bt_uport(bs_platform_data->bluetooth_port_num);
 
 
 	return 0;
