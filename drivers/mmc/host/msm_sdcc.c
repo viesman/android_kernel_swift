@@ -1372,7 +1372,7 @@ static const struct mmc_host_ops msmsdcc_ops = {
 #ifdef CONFIG_MMC_MSM_SDIO_SUPPORT
 	.enable_sdio_irq = msmsdcc_enable_sdio_irq,
 #endif
-	//.get_status = msmsdcc_get_status,
+	.get_status = msmsdcc_get_status,
 };
 
 /* LGE_CHANGE

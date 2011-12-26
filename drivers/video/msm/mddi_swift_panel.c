@@ -22,13 +22,12 @@
 #include <linux/backlight.h>
 
 #include "msm_fb.h"
-//#include "../../../../drivers/video/msm/mddihost_eve.h"
 #include "mddihosti.h"
 
 #define TM_GET_DID(id)	((id) & 0xff)
 #define TM_GET_PID(id)	(((id) & 0xff00)>>8)
 #define SWIFT_DEBUG_LCD 0 
-
+#define SWIFT_LCD_VREG 0
 #define LCD_CONTROL_BLOCK_BASE	0x110000
 #define INTFLG		LCD_CONTROL_BLOCK_BASE|(0x18)
 #define INTMSK		LCD_CONTROL_BLOCK_BASE|(0x1c)
@@ -67,7 +66,7 @@ static void *mddi_ss_driveric_vsync_handler_arg;
 static uint16 mddi_ss_driveric_vsync_attempts;
 
 static mddi_ss_driveric_state_t ss_driveric_state = SS_POWER_OFF;
-static mddi_ss_panel_t ss_panel = INNOTEK;
+
 static struct msm_panel_common_pdata *mddi_ss_driveric_pdata;
 
 static int mddi_ss_driveric_on(struct platform_device *pdev);
@@ -83,33 +82,7 @@ struct display_table {
 	unsigned int val_list[5];
 };
 
-static struct display_table mddi_innotek_display_on[] = {
-#if 1
-	{0x29, 1, {0x00000000}},
-#else
-	// Display on sequence
-	{0xEF, 1, {0x00000006}},
-	{REGFLAG_DELAY, 20, {}},
-	{0xEF, 1, {0x00000007}},
-//	{REGFLAG_END_OF_TABLE, 0x00, {}}
-#endif
-};
-
-static struct display_table mddi_innotek_display_off[] = {
-#if 1
-	{0x28, 1, {0x00000000}},
-#else
-	// Display off sequence
-	{0xEF, 1, {0x00000006}},
-	{REGFLAG_DELAY, 20, {}},
-	{0xEF, 1, {0x00000000}},
-	{REGFLAG_DELAY, 10, {}},
-//	{REGFLAG_END_OF_TABLE, 0x00, {}}
-#endif
-};
-
 static struct display_table mddi_innotek_power_on[] = {
-#if 1
 	/* Power on Sequence */
 	{0x11, 1, {0x00000000}},
     {REGFLAG_DELAY, 120,{}},
@@ -157,111 +130,13 @@ static struct display_table mddi_innotek_power_on[] = {
 	{0x2C, 1, {0x00000000}},
 	/* Display On */
 	{0x29, 1, {0x00000000}},
-#else
-	/* Power ON Sequence */
-    {0xF3, 1, {0x00000000}},
-    {0x11, 1, {0x00000000}},
-    {REGFLAG_DELAY, 10, {}},
-    {0xF3, 3, {0x00000100, 0x7F204407, 0x00000000}},
-    {0xF4, 2, {0x5531230D, 0x00000011}},
-    {0xF5, 2, {0xF0080010, 0x00001F35}},
-    {REGFLAG_DELAY, 10, {}},
-    {0xF3, 1, {0x00000300}},    
-    {REGFLAG_DELAY, 10, {}},
-    {0xF3, 1, {0x00000700}},    
-    {REGFLAG_DELAY, 10, {}},
-    {0xF3, 1, {0x00000F00}},    
-    {REGFLAG_DELAY, 10, {}},
-    {0xF3, 1, {0x00001F00}},    
-    {REGFLAG_DELAY, 10, {}},
-    {0xF3, 1, {0x00003F00}},    
-    {REGFLAG_DELAY, 20, {}},
-    {0xF3, 1, {0x00007F00}},
-    {REGFLAG_DELAY, 30, {}},
-
-    // Normal Mode
-    {0x13, 1, {0x00000000}},
-
-    // Column Address
-    {0x2A, 1, {0x3F010000}},
-
-    // Page Address
-    {0x2B, 1, {0xDF010000}},
-
-    // Memory Data Address Control
-    {0x36, 1, {0x00000048}},
-
-    // Interface Pixel Format
-    {0x3A, 1, {0x00000005}},
-
-	// Display Control Set
-    {0xF2, 3, {0x03031416, 0x03080803, 0x00151500}},
-
-	// Tearing Effect Lion On
-    {0x35, 1, {0x00000000}},
-
-	// CABC Control
-    {0x51, 1, {0x000000FF}},
-    {0x53, 1, {0x0000002C}},
-    {0x55, 1, {0x00000003}},
-    {0x5E, 1, {0x00000000}},
-    {0xCA, 1, {0x003F8080}},
-    {0xCB, 1, {0x00000003}},
-    {0xCC, 2, {0x008F0120, 0x000000EF}},
-    {0xCD, 1, {0x00009704}},
-
-    // Positive Gamma Red
-    {0xF7, 4, {0x11000000, 0x292A2318, 0x00050812, 0x00222200}},
-
-    // Negative Gamma Red
-    {0xF8, 4, {0x11000000, 0x292A2318, 0x00050812, 0x00222200}},
-
-    // Positive Gamma Green
-    {0xF9, 4, {0x11000000, 0x292A2318, 0x00050812, 0x00222200}},
-
-    // Negative Gamma Green
-    {0xFA, 4, {0x11000000, 0x292A2318, 0x00050812, 0x00222200}},
-
-    // Positive Gamma Blue
-    {0xFB, 4, {0x11000000, 0x292A2318, 0x00050812, 0x00222200}},
-
-    // Negative Gamma Blue
-    {0xFC, 4, {0x11000000, 0x292A2318, 0x00050812, 0x00222200}},
-
-    // Gate Control Register
-    {0xFD, 1, {0x00003B11}},
-
-    // GRAM Write
-    {0x2C, 1, {0x00000000}},
-
-    // Dispaly On Sequence
-    {0xEF, 1, {0x00000006}},
-    {REGFLAG_DELAY, 55, {}},
-    {0xEF, 1, {0x00000007}},
-
- //   {REGFLAG_END_OF_TABLE, 0x00, {}}
-#endif
 };
 
 static struct display_table mddi_innotek_power_off[] = {
-#if 1
 	{0x28, 1, {0x00000000}},
 	{0x10, 1, {0x00000000}},
 	{REGFLAG_DELAY, 120,{}},
 	{0xE0, 1, {0x00000002}},
-#else
-	// Display off sequence
-	{0xEF, 1, {0x00000006}},
-	{REGFLAG_DELAY, 90, {}},
-	{0xEF, 1, {0x00000000}},
-	{REGFLAG_DELAY, 10, {}},
-
-	// Sleep In
-	{0xF3, 1, {0x00000000}},
-	{0x10, 1, {0x00000000}},
-
-//   {REGFLAG_END_OF_TABLE, 0x00, {}}
-#endif
 };
 
 static struct display_table mddi_innotek_position[] = {
@@ -433,22 +308,6 @@ static int innotek_panel_hw_reset(void)
 	return 0;
 }
 
-static int mddi_ss_driveric_display_on(struct msm_fb_data_type *mfd)
-{
-	ss_driveric_state = SS_POWER_ON;
-	display_table(mddi_innotek_display_on, ARRAY_SIZE(mddi_innotek_display_on));
-
-	return 0;
-}
-
-static int mddi_ss_driveric_display_off(struct msm_fb_data_type *mfd)
-{
-	ss_driveric_state = SS_POWER_OFF;
-	display_table(mddi_innotek_display_off, ARRAY_SIZE(mddi_innotek_display_off));
-
-	return 0;
-}
-
 static int mddi_ss_driveric_innotek_powerdown(struct msm_fb_data_type *mfd)
 {
 
@@ -487,6 +346,7 @@ static int mddi_ss_driveric_powerdown(struct msm_fb_data_type *mfd)
 static int mddi_ss_driveric_on(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
+#if SWIFT_LCD_VREG
 	struct vreg *vreg;
 	unsigned int ret=0;
 	
@@ -513,6 +373,7 @@ static int mddi_ss_driveric_on(struct platform_device *pdev)
 
 	   mdelay(1);
    }
+#endif
 
 #if SWIFT_DEBUG_LCD	
 	printk(KERN_INFO  "%s\n", __func__);
@@ -529,42 +390,41 @@ static int mddi_ss_driveric_on(struct platform_device *pdev)
 	if (mfd->key != MFD_KEY)
 		return -EINVAL;
 
-#if 0
-		mddi_ss_driveric_innotek_init(mfd);
-#endif
 
 	return 0;
 }
 
 static int mddi_ss_driveric_off(struct platform_device *pdev)
 {
+#if SWIFT_LCD_VREG
 	struct vreg *vreg;
 	unsigned int ret=0;
-
-	printk(KERN_INFO  "%s\n", __func__);
-#if SWIFT_DEBUG_LCD
-	mddi_ss_driveric_powerdown(platform_get_drvdata(pdev));
 #endif
-	//	vreg = vreg_get(NULL, "gp1");
-	//	if(IS_ERR(vreg)) {
-	//	printk(KERN_ERR "%s: vreg_get(%s) failed (%ld)\n",
-	//				__func__, "gp1", PTR_ERR(vreg));
-//	}
-	//	ret = vreg_must_disable(vreg);
-	//	if(ret) {
-	//		printk(KERN_ERR "%s: vreg disabled failed!\n", __func__);//
-	//	}
+#if SWIFT_DEBUG_LCD
+	printk(KERN_INFO  "%s\n", __func__);
+#endif	
+	mddi_ss_driveric_powerdown(platform_get_drvdata(pdev));	
 
-	//	vreg = vreg_get(NULL, "gp2");
-	//	if(IS_ERR(vreg)) {
-	//		printk(KERN_ERR "%s: vreg_get(%s) failed (%ld)\n",
-		       //			__func__, "gp2", PTR_ERR(vreg));
-	//	}
-//	ret = vreg_must_disable(vreg);
-//	if(ret) {
-	  //	printk(KERN_ERR "%s: vreg disabled failed!\n", __func__);
-		//	}
-
+#if SWIFT_LCD_VREG
+		vreg = vreg_get(NULL, "gp1");
+		if(IS_ERR(vreg)) {
+		printk(KERN_ERR "%s: vreg_get(%s) failed (%ld)\n",
+					__func__, "gp1", PTR_ERR(vreg));
+	}
+		ret = vreg_must_disable(vreg);
+		if(ret) {
+			printk(KERN_ERR "%s: vreg disabled failed!\n", __func__);//
+		}
+		vreg = vreg_get(NULL, "gp2");
+		if(IS_ERR(vreg)) {
+			printk(KERN_ERR "%s: vreg_get(%s) failed (%ld)\n",
+				__func__, "gp2", PTR_ERR(vreg));
+		}
+	ret = vreg_must_disable(vreg);
+	if(ret) {
+		printk(KERN_ERR "%s: vreg disabled failed!\n", __func__);
+			}
+#endif
 	return 0;
 }
 
@@ -626,9 +486,9 @@ int mddi_ss_driveric_register(struct msm_panel_info *pinfo,
 {
 	struct platform_device *pdev = NULL;
 	int ret;
-
+#if SWIFT_DEBUG_LCD
 	printk(KERN_INFO  "%s\n", __func__);
-
+#endif
 
 	if ((channel > 2) || ch_used[channel])
 		return -ENODEV;
@@ -694,4 +554,3 @@ static int __init mddi_ss_driveric_init(void)
 module_init(mddi_ss_driveric_init);
 MODULE_DESCRIPTION("Mddi Driver Swift(MSM)");
 MODULE_LICENSE("GPL");
-
