@@ -1577,7 +1577,8 @@ static int32_t isx005_set_brightness(int8_t ev)
 
 	case 6:
 		rc = isx005_i2c_write(isx005_client->addr,
-				0x0060, 0x00, BYTE_LEN);
+				0x0060, 0xCD, BYTE_LEN);
+				//0x0060, 0x00, BYTE_LEN);
 		if(rc<0)
 			return rc;	
 	

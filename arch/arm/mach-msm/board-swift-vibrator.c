@@ -71,7 +71,7 @@ struct vibrator_device {
 };
 
 static atomic_t s_vibrator = ATOMIC_INIT(0);
-static atomic_t s_amp = ATOMIC_INIT(50);
+static atomic_t s_amp = ATOMIC_INIT(25);
 
 /* set amp level, default amp 50
  * level 1: 100, 3.1V
