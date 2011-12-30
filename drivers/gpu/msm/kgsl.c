@@ -446,11 +446,7 @@ static int kgsl_first_open_locked(void)
 		kgsl_pwrctrl(KGSL_PWRFLAGS_POWER_ON);
 	#endif
 	kgsl_pwrctrl(KGSL_PWRFLAGS_YAMATO_CLK_ON);
-	#ifdef CONFIG_ARCH_MSM7X30
-		/* 7x30 has HW bug and needs clocks turned on before the power
-		rails */
-		kgsl_pwrctrl(KGSL_PWRFLAGS_POWER_ON);
-	#endif
+	kgsl_pwrctrl(KGSL_PWRFLAGS_POWER_ON);
 	kgsl_driver.is_suspended = KGSL_FALSE;
 
 	INIT_LIST_HEAD(&kgsl_driver.pagetable_list);
@@ -487,11 +483,7 @@ static int kgsl_last_release_locked(void)
 		kgsl_pwrctrl(KGSL_PWRFLAGS_YAMATO_CLK_OFF);
 	#endif
 	kgsl_pwrctrl(KGSL_PWRFLAGS_POWER_OFF);
-	#ifdef CONFIG_ARCH_MSM7X30
-		/* 7x30 has HW bug and needs clocks turned off before the power
-		rails */
-		kgsl_pwrctrl(KGSL_PWRFLAGS_YAMATO_CLK_OFF);
-	#endif
+	kgsl_pwrctrl(KGSL_PWRFLAGS_YAMATO_CLK_OFF);
 	kgsl_driver.power_flags = 0;
 
 	return 0;
@@ -1526,7 +1518,7 @@ static long kgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	return result;
 }
 
-static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
+/* static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	int result;
 	struct kgsl_memdesc *memdesc = NULL;
@@ -1538,7 +1530,7 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 
 	device = &kgsl_driver.yamato_device;
 
-	/*allow yamato memstore to be mapped read only */
+
 	if (vma_offset == device->memstore.physaddr) {
 		if (vma->vm_flags & VM_WRITE) {
 			result = -EPERM;
@@ -1566,13 +1558,13 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 done:
 	mutex_unlock(&kgsl_driver.mutex);
 	return result;
-}
+} */
 
 static const struct file_operations kgsl_fops = {
 	.owner = THIS_MODULE,
 	.release = kgsl_release,
 	.open = kgsl_open,
-	.mmap = kgsl_mmap,
+/*	.mmap = kgsl_mmap, */
 	.unlocked_ioctl = kgsl_ioctl,
 };
 

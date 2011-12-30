@@ -92,36 +92,6 @@ void __init swift_init_gpio_i2c_devices(void);
 void __init swift_init_bt_device(void);
 void __init swift_init_mmc_devices(void);
 
-static struct resource smc91x_resources[] = {
-	[0] = {
-		.start	= 0x9C004300,
-		.end	= 0x9C0043ff,
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] = {
-		.start	= MSM_GPIO_TO_INT(132),
-		.end	= MSM_GPIO_TO_INT(132),
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-#ifdef CONFIG_USB_FUNCTION
-static struct usb_mass_storage_platform_data usb_mass_storage_pdata = {
-	.nluns          = 0x02,
-	.buf_size       = 16384,
-	.vendor         = "LG Swift mass storage",
-	.product        = "Mass storage",
-	.release        = 0xffff,
-};
-
-static struct platform_device mass_storage_device = {
-	.name           = "usb_mass_storage",
-	.id             = -1,
-	.dev            = {
-		.platform_data          = &usb_mass_storage_pdata,
-	},
-};
-#endif
 #ifdef CONFIG_USB_ANDROID
 static char *usb_functions_default[] = {
 	"diag",
@@ -147,6 +117,10 @@ static char *usb_functions_rndis[] = {
 static char *usb_functions_rndis_adb[] = {
 	"rndis",
 	"adb",
+};
+
+static char *usb_functions_lge_mass_storage_only[] = {
+	"usb_mass_storage",
 };
 
 static char *usb_functions_all[] = {
@@ -190,6 +164,11 @@ static struct android_usb_product usb_products[] = {
 		.product_id	= 0x61D9,
 		.num_functions	= ARRAY_SIZE(usb_functions_rndis_adb),
 		.functions	= usb_functions_rndis_adb,
+	},
+	{
+		.product_id = 0x61B4,
+		.num_functions = ARRAY_SIZE(usb_functions_lge_mass_storage_only),
+		.functions = usb_functions_lge_mass_storage_only,
 	},
 };
 
@@ -263,14 +242,24 @@ static int __init board_serialno_setup(char *serialno)
 __setup("androidboot.serialno=", board_serialno_setup);
 #endif
 
-static struct platform_device smc91x_device = {
-	.name		= "smc91x",
-	.id		= 0,
-	.num_resources	= ARRAY_SIZE(smc91x_resources),
-	.resource	= smc91x_resources,
+#ifdef CONFIG_USB_FUNCTION
+
+static struct usb_mass_storage_platform_data usb_mass_storage_pdata = {
+	.nluns          = 0x02,
+	.buf_size       = 16384,
+	.vendor         = "GOOGLE",
+	.product        = "Mass storage",
+	.release        = 0xffff,
 };
 
-#ifdef CONFIG_USB_FUNCTION
+static struct platform_device mass_storage_device = {
+	.name           = "usb_mass_storage",
+	.id             = -1,
+	.dev            = {
+		.platform_data          = &usb_mass_storage_pdata,
+	},
+};
+
 static struct usb_function_map usb_functions_map[] = {
 	{"diag", 0},
 	{"adb", 1},
@@ -334,15 +323,16 @@ static struct usb_composition usb_func_composition[] = {
 		.functions	    = 0x43,
 	},
 #endif
+
 };
 
 static struct msm_hsusb_platform_data msm_hsusb_pdata = {
 	.version	= 0x0100,
 	.phy_info	= (USB_PHY_INTEGRATED | USB_PHY_MODEL_65NM),
-	.vendor_id          = 0x1004,
-	.product_name       = "LG Mobile USB Modem",
-	.serial_number      = "LGE_ANDROID_GT540",
-	.manufacturer_name  = "LG Electronics Inc.",
+	.vendor_id          = 0x5c6,
+	.product_name       = "Qualcomm HSUSB Device",
+	.serial_number      = "1234567890ABCDEF",
+	.manufacturer_name  = "Qualcomm Incorporated",
 	.compositions	= usb_func_composition,
 	.num_compositions = ARRAY_SIZE(usb_func_composition),
 	.function_map   = usb_functions_map,
@@ -350,6 +340,26 @@ static struct msm_hsusb_platform_data msm_hsusb_pdata = {
 	.config_gpio    = NULL,
 };
 #endif
+
+static struct resource smc91x_resources[] = {
+	[0] = {
+		.start	= 0x9C004300,
+		.end	= 0x9C0043ff,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= MSM_GPIO_TO_INT(132),
+		.end	= MSM_GPIO_TO_INT(132),
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device smc91x_device = {
+	.name		= "smc91x",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(smc91x_resources),
+	.resource	= smc91x_resources,
+};
 
 #ifdef CONFIG_USB_EHCI_MSM
 static void msm_hsusb_vbus_power(unsigned phy_info, int on)
@@ -477,7 +487,7 @@ static struct msm_snd_endpoints msm_device_snd_endpoints = {
 	.num = sizeof(snd_endpoints_list) / sizeof(struct snd_endpoint)
 };
 
-struct platform_device msm_device_snd = {
+static struct platform_device msm_device_snd = {
 	.name = "msm_snd",
 	.id = -1,
 	.dev    = {
@@ -583,7 +593,7 @@ static struct msm_adspdec_database msm_device_adspdec_database = {
 	.dec_info_list = dec_info_list,
 };
 
-struct platform_device msm_device_adspdec = {
+static struct platform_device msm_device_adspdec = {
 	.name = "msm_adspdec",
 	.id = -1,
 	.dev    = {

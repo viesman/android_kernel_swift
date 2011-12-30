@@ -365,7 +365,5 @@ void msm_snddev_tx_route_config(void);
 void msm_snddev_tx_route_deconfig(void);
 
 extern unsigned int msm_shared_ram_phys; /* defined in arch/arm/mach-msm/io.c */
-extern struct platform_device msm_device_snd;
-extern struct platform_device msm_device_adspdec;
 
 #endif
