@@ -1669,6 +1669,21 @@ MACHINE_START(MSM7X27_SURF, "QCT MSM7x27 SURF")
 	.timer		= &msm_timer,
 MACHINE_END
 
+
+static void __init swift_fixup(struct machine_desc *desc, struct tag *tags,
+		char **cmdline, struct meminfo *mi)
+{
+	mi->nr_banks = 1;
+	mi->bank[0].start = PHYS_OFFSET;
+	mi->bank[0].node = PHYS_TO_NID(PHYS_OFFSET);
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	mi->bank[0].size = (214*1024*1024);
+#else
+	mi->bank[0].size = (215*1024*1024);
+#endif
+}
+
+
 MACHINE_START(MSM7X27_SWIFT, "MSM7x27 Swift (Optimus)")
 #ifdef CONFIG_MSM_DEBUG_UART
 	.phys_io        = MSM_DEBUG_UART_PHYS,
@@ -1679,6 +1694,7 @@ MACHINE_START(MSM7X27_SWIFT, "MSM7x27 Swift (Optimus)")
 	.init_irq	= msm7x2x_init_irq,
 	.init_machine	= msm7x2x_init,
 	.timer		= &msm_timer,
+        .fixup = swift_fixup,
 MACHINE_END
 
 
