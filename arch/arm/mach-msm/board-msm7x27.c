@@ -1180,8 +1180,8 @@ static struct platform_device swift_keyled_device = {
 	.name = "swift-keyled",
 };
 
-static struct platform_device swift_atcmd = {
-     .name = "alohag_atcmd",
+static struct platform_device swift_lge_rpc = {
+     .name = "swift_lge_rpc",
 };
 /*ISX005 Camera*/
 #ifdef CONFIG_ISX005
@@ -1262,7 +1262,7 @@ static struct platform_device *devices[] __initdata = {
 	&mddi_ss_driveric_device,	
 	&swift_backlight_device,
 	&swift_keyled_device,
-	&swift_atcmd,
+	&swift_lge_rpc,
 };
 
 static struct msm_panel_common_pdata mdp_pdata = {
